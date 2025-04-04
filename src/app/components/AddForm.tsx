@@ -11,12 +11,11 @@ interface Field {
 }
 
 interface AddFormProps {
-  type: string;
   fields: Field[];
   onSubmit: (formData: Record<string, string>) => void;
 }
 
-export default function AddForm({ type, fields, onSubmit }: AddFormProps) {
+export default function AddForm({ fields, onSubmit }: AddFormProps) {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 

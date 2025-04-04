@@ -5,7 +5,6 @@ import Container from '../components/Container';
 import AddForm from '../components/AddForm';
 import { checkAdmin } from '@/utils/adminAuth';
 
-// Define the AuthorPost interface
 interface AuthorPost {
   id: number;
   title: string;
@@ -14,16 +13,16 @@ interface AuthorPost {
 }
 
 export default function ByAuthor() {
-  const [isAdmin, setIsAdmin] = useState(false); // State to check if the user is an admin
-  const [authorPosts, setAuthorPosts] = useState<AuthorPost[]>([]); // State to store author posts
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [authorPosts, setAuthorPosts] = useState<AuthorPost[]>([]);
 
   // Fetch author posts on component mount
   useEffect(() => {
-    setIsAdmin(checkAdmin()); // Check if the user is an admin
+    setIsAdmin(checkAdmin());
 
     async function fetchAuthorPosts() {
       try {
-        const response = await fetch('/api/posts?type=author'); // Fetch posts of type "author"
+        const response = await fetch('/api/posts?type=author');
         if (!response.ok) throw new Error('Failed to fetch posts');
         const data: AuthorPost[] = await response.json();
 
@@ -39,22 +38,22 @@ export default function ByAuthor() {
   }, []);
 
   // Handle form submission for adding a new post
-  const handleAddAuthorPost = async (formData: { title: string; content: string }) => {
+  const handleAddAuthorPost = async (formData: Record<string, string>) => {
     const newPost = {
       title: formData.title,
       content: formData.content,
       type: 'author',
     };
-
+  
     try {
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPost),
       });
-
+  
       if (!response.ok) throw new Error('Failed to create post');
-
+  
       const createdPost: AuthorPost = await response.json();
       setAuthorPosts((prev) => [createdPost, ...prev]); // Add the new post to the state
       alert('Post added successfully!');
@@ -62,7 +61,7 @@ export default function ByAuthor() {
       console.error('Error adding author post:', error);
       alert('Failed to add post. Please try again.');
     }
-  };
+  };  
 
   return (
     <>
@@ -79,8 +78,8 @@ export default function ByAuthor() {
               <h2 className="text-2xl font-bold mb-4">Add New Post</h2>
               <AddForm
                 fields={[
-                  { name: 'title', label: 'Title', placeholder: 'Enter post title', type: 'text', required: true },
-                  { name: 'content', label: 'Content', placeholder: 'Write your content here', type: 'textarea', required: true },
+                  { name: 'title', label: 'Title', placeholder: 'Enter post title', type: 'text', required:true },
+                  { name: 'content', label: 'Content', placeholder:'Write your content here', type:'textarea', required:true },
                 ]}
                 onSubmit={handleAddAuthorPost}
               />
