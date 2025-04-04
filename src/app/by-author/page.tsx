@@ -12,44 +12,53 @@ interface AuthorPost {
   createdAt: string;
 }
 
-// Default data to display if no content exists yet
-const defaultAuthorPosts: AuthorPost[] = [
-  {
-    id: 1,
-    title: 'My Writing Process',
-    content: 'Everyone has a different approach to writing. In this post, I share my personal writing process from initial idea to final draft.',
-    createdAt: '2025-03-28',
-  }
-];
-
 export default function ByAuthor() {
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [authorPosts, setAuthorPosts] = useState<AuthorPost[]>(defaultAuthorPosts);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [authorPosts, setAuthorPosts] = useState<AuthorPost[]>([]);
 
   useEffect(() => {
-    // Check if user is admin
     setIsAdmin(checkAdmin());
-    
-    // Load stored author posts
-    const storedPosts = localStorage.getItem('authorPosts');
-    if (storedPosts) {
-      setAuthorPosts(JSON.parse(storedPosts));
+
+    // Fetch author posts from the backend
+    async function fetchAuthorPosts() {
+      try {
+        const response = await fetch('/api/posts?type=author');
+        const data = await response.json();
+        // Sort by newest first
+        const sorted = data.sort((a: AuthorPost, b: AuthorPost) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setAuthorPosts(sorted);
+      } catch (error) {
+        console.error('Error fetching author posts:', error);
+      }
     }
+
+    fetchAuthorPosts();
   }, []);
 
-  const handleAddAuthorPost = (formData: any) => {
-    const newPost: AuthorPost = {
-      id: Date.now(),
+  const handleAddAuthorPost = async (formData: any) => {
+    const newPost = {
       title: formData.title,
       content: formData.content,
-      createdAt: new Date().toISOString().split('T')[0],
+      type: 'author',
     };
-    
-    const updatedPosts = [...authorPosts, newPost];
-    setAuthorPosts(updatedPosts);
-    
-    // Save to localStorage
-    localStorage.setItem('authorPosts', JSON.stringify(updatedPosts));
+
+    try {
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPost),
+      });
+
+      if (!response.ok) throw new Error('Failed to create post');
+
+      const createdPost = await response.json();
+      setAuthorPosts((prev) => [createdPost, ...prev]); // Add new post to state
+      alert('Post added successfully!');
+    } catch (error) {
+      console.error('Error adding author post:', error);
+    }
   };
 
   return (
@@ -57,24 +66,23 @@ export default function ByAuthor() {
       <div className="bg-blue-600 py-10 text-center text-white">
         <h1 className="text-3xl font-bold">By Author</h1>
       </div>
-      
+
       <Container>
         <div className="py-8">
-          {/* Only show the form to admins */}
           {isAdmin && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-              <h2 className="text-2xl font-bold mb-4">Add New Author Post</h2>
-              <AddForm 
-                type="Author Post" 
+              <h2 className="text-2xl font-bold mb-4">Add New Post</h2>
+              <AddForm
+                type="Author Post"
                 fields={[
-                  { name: 'title', label: 'Title', placeholder: 'Enter post title', type: 'text', required: true },
-                  { name: 'content', label: 'Content', placeholder: 'Write your post content here', type: 'textarea', required: true },
-                ]} 
+                  { name: 'title', label: 'Title', placeholder: 'Enter post title', type: 'text', required:true },
+                  { name: 'content', label: 'Content', placeholder: 'Write your content here', type:'textarea', required:true },
+                ]}
                 onSubmit={handleAddAuthorPost}
               />
             </div>
           )}
-          
+
           <div className="space-y-6">
             {authorPosts.map((post) => (
               <div key={post.id} className="bg-white rounded-lg shadow-md p-6">

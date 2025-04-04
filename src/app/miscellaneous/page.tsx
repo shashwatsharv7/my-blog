@@ -13,49 +13,63 @@ interface MiscPost {
   createdAt: string;
 }
 
-// Default data to display if no content exists yet
-const defaultMiscPosts: MiscPost[] = [
-  {
-    id: 1,
-    title: 'The Joy of Reading',
-    content: "There's nothing quite like getting lost in a good book. Reading opens up new worlds and perspectives.",
-    tags: ['Reading', 'Books'],
-    createdAt: '2025-03-25',
-  }
-];
-
 export default function Miscellaneous() {
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [miscPosts, setMiscPosts] = useState<MiscPost[]>(defaultMiscPosts);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [miscPosts, setMiscPosts] = useState<MiscPost[]>([]);
 
+  // Fetch posts on component mount
   useEffect(() => {
-    // Check if user is admin
     setIsAdmin(checkAdmin());
-    
-    // Load stored miscellaneous posts
-    const storedPosts = localStorage.getItem('miscPosts');
-    if (storedPosts) {
-      setMiscPosts(JSON.parse(storedPosts));
+
+    async function fetchMiscPosts() {
+      try {
+        const response = await fetch('/api/posts?type=misc');
+        if (!response.ok) throw new Error('Failed to fetch posts');
+        const data = await response.json();
+        setMiscPosts(data);
+      } catch (error) {
+        console.error('Error fetching miscellaneous posts:', error);
+      }
     }
+
+    fetchMiscPosts();
   }, []);
 
-  const handleAddMiscPost = (formData: any) => {
-    // Process tags if provided
-    const tags = formData.tags ? formData.tags.split(',').map((tag: string) => tag.trim()) : [];
-    
-    const newPost: MiscPost = {
-      id: Date.now(),
-      title: formData.title,
-      content: formData.content,
-      tags: tags,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    
-    const updatedPosts = [...miscPosts, newPost];
-    setMiscPosts(updatedPosts);
-    
-    // Save to localStorage
-    localStorage.setItem('miscPosts', JSON.stringify(updatedPosts));
+  // Handle form submission
+  const handleAddMiscPost = async (formData: Omit<MiscPost, 'id' | 'createdAt' | 'tags'> & { tags: string }) => {
+    try {
+      // Convert tags string to array
+      const tags = formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [];
+      
+      const postData = {
+        title: formData.title,
+        content: formData.content,
+        tags: tags,
+        type: 'misc'
+      };
+
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const createdPost = await response.json();
+      
+      // Update state to show new post immediately
+      setMiscPosts((prev) => [createdPost, ...prev]);
+      
+      alert('Post added successfully!');
+    } catch (error) {
+      console.error('Error adding post:', error);
+      alert('Failed to add post. Check console for details.');
+    }
   };
 
   return (
@@ -63,25 +77,24 @@ export default function Miscellaneous() {
       <div className="bg-blue-600 py-10 text-center text-white">
         <h1 className="text-3xl font-bold">Miscellaneous</h1>
       </div>
-      
+
       <Container>
         <div className="py-8">
-          {/* Only show the form to admins */}
           {isAdmin && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
               <h2 className="text-2xl font-bold mb-4">Add New Miscellaneous Post</h2>
-              <AddForm 
-                type="Miscellaneous Post" 
+              <AddForm
+                type="Miscellaneous Post"
                 fields={[
                   { name: 'title', label: 'Title', placeholder: 'Enter post title', type: 'text', required: true },
                   { name: 'content', label: 'Content', placeholder: 'Write your post content here', type: 'textarea', required: true },
                   { name: 'tags', label: 'Tags', placeholder: 'Comma-separated tags (e.g., Books, Reviews)', type: 'text' },
-                ]} 
+                ]}
                 onSubmit={handleAddMiscPost}
               />
             </div>
           )}
-          
+
           <div className="space-y-6">
             {miscPosts.map((post) => (
               <div key={post.id} className="bg-white rounded-lg shadow-md p-6">
