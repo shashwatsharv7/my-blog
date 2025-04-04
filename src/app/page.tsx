@@ -3,48 +3,76 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Container from './components/Container';
-import { checkAdmin } from '@/utils/adminAuth';
+
+interface ReferenceText {
+  id: number;
+  title: string;
+  author: string;
+  content: string;
+  category?: string;
+  createdAt: string;
+}
+
+interface AuthorPost {
+  id: number;
+  title: string;
+  content: string;
+  createdAt: string;
+}
+
+interface MiscPost {
+  id: number;
+  title: string;
+  content: string;
+  tags?: string[];
+  createdAt: string;
+}
 
 interface ContentItem {
   id: number;
   title: string;
   content: string;
+  type: string;
+  path: string;
   author?: string;
   category?: string;
+  tags?: string[];
   createdAt: string;
-  type: string;
 }
 
 export default function Home() {
   const [latestContent, setLatestContent] = useState<ContentItem[]>([]);
 
   useEffect(() => {
-    // Fetch content from localStorage
-    const referenceTexts = JSON.parse(localStorage.getItem('referenceTexts') || '[]');
-    const authorPosts = JSON.parse(localStorage.getItem('authorPosts') || '[]');
-    const miscPosts = JSON.parse(localStorage.getItem('miscPosts') || '[]');
+    // Fetch content from localStorage with type safety
+    const referenceTexts: ReferenceText[] = JSON.parse(localStorage.getItem('referenceTexts') || '[]');
+    const authorPosts: AuthorPost[] = JSON.parse(localStorage.getItem('authorPosts') || '[]');
+    const miscPosts: MiscPost[] = JSON.parse(localStorage.getItem('miscPosts') || '[]');
 
-    // Combine all content into a single array
-    const allContent = [
-      ...referenceTexts.map((item: any) => ({
+    // Combine all content into a single array with proper typing
+    const allContent: ContentItem[] = [
+      ...referenceTexts.map((item) => ({
         ...item,
         type: 'Reference Texts',
         path: '/reference-texts',
       })),
-      ...authorPosts.map((item: any) => ({
+      ...authorPosts.map((item) => ({
         ...item,
         type: 'By Author',
         path: '/by-author',
       })),
-      ...miscPosts.map((item: any) => ({
+      ...miscPosts.map((item) => ({
         ...item,
         type: 'Miscellaneous',
         path: '/miscellaneous',
+        tags: item.tags || [],
       })),
     ];
 
     // Sort by date (newest first)
-    allContent.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    allContent.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
     // Take top 3 items for display
     setLatestContent(allContent.slice(0, 3));
@@ -57,10 +85,8 @@ export default function Home() {
         className="relative h-screen bg-cover bg-center"
         style={{ backgroundImage: "url('/images/mithila-bg.jpg')" }}
       >
-        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent"></div>
-
-        {/* Hero Content */}
+        
         <div className="relative h-full flex flex-col items-center justify-center text-center text-white">
           <h1 className="text-5xl font-bold mb-4">Mithila By Rajnath</h1>
           <p className="text-lg md:text-xl mb-8">
