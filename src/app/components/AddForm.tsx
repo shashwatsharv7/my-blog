@@ -2,27 +2,30 @@
 
 import { useState } from 'react';
 
-interface Field {
-  name: string;
+interface Field<T> {
+  name: keyof T;
   label: string;
   placeholder: string;
   type: 'text' | 'textarea';
   required?: boolean;
 }
 
-interface AddFormProps {
-  fields: Field[];
-  onSubmit: (formData: Record<string, string>) => void;
+interface AddFormProps<T = Record<string, string>> {
+  fields: Field<T>[];
+  onSubmit: (formData: T) => void;
 }
 
-export default function AddForm({ fields, onSubmit }: AddFormProps) {
-  const [formData, setFormData] = useState<Record<string, string>>({});
+export default function AddForm<T = Record<string, string>>({
+  fields,
+  onSubmit
+}: AddFormProps<T>) {
+  const [formData, setFormData] = useState<Partial<T>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.value
     });
   };
 
@@ -31,11 +34,10 @@ export default function AddForm({ fields, onSubmit }: AddFormProps) {
     setIsSubmitting(true);
 
     try {
-      await onSubmit(formData);
+      await onSubmit(formData as T);
       setFormData({});
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('Failed to submit form');
     } finally {
       setIsSubmitting(false);
     }
@@ -44,31 +46,30 @@ export default function AddForm({ fields, onSubmit }: AddFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {fields.map((field) => (
-        <div key={field.name} className="space-y-1">
-          <label htmlFor={field.name} className="block text-sm font-medium text-gray-700">
+        <div key={String(field.name)} className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
             {field.label}
-            {field.required && <span className="text-red-500">*</span>}
+            {field.required && <span className="text-red-500 ml-1">*</span>}
           </label>
           {field.type === 'textarea' ? (
             <textarea
-              id={field.name}
-              name={field.name}
+              name={String(field.name)}
               placeholder={field.placeholder}
-              value={formData[field.name] || ''}
+              value={(formData[field.name] as string) || ''}
               onChange={handleChange}
               required={field.required}
-              rows={5}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border rounded-lg"
+              rows={4}
             />
           ) : (
             <input
-              id={field.name}
-              name={field.name}
+              type="text"
+              name={String(field.name)}
               placeholder={field.placeholder}
-              value={formData[field.name] || ''}
+              value={(formData[field.name] as string) || ''}
               onChange={handleChange}
               required={field.required}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border rounded-lg"
             />
           )}
         </div>
@@ -76,7 +77,7 @@ export default function AddForm({ fields, onSubmit }: AddFormProps) {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+        className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
       >
         {isSubmitting ? 'Submitting...' : 'Submit'}
       </button>
