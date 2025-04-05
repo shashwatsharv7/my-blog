@@ -18,7 +18,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         createdat TIMESTAMP DEFAULT NOW()
       )
     `);
+    
+    if (req.method === 'DELETE') {
+      if (!checkAdmin()) {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
 
+      const { id } = req.query; // Changed to get ID from query params
+      if (!id) return res.status(400).json({ error: 'Missing post ID' });
+
+      await pool.query('DELETE FROM posts WHERE id = $1', [id]);
+      return res.status(200).json({ success: true });
+    }  
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
       res.setHeader('Access-Control-Allow-Origin', '*');

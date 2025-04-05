@@ -47,7 +47,7 @@ export default function PostCard({
         <p>{content}</p>
       </div>
       {tags && tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-4">
+        <div className="flex flex-wrap gap-2a mt-4">
           {tags.map((tag, index) => (
             <span
               key={index}

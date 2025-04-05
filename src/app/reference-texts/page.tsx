@@ -61,10 +61,8 @@ export default function ReferenceTexts() {
     if (!confirm('Are you sure you want to delete this post?')) return;
     
     try {
-      const response = await fetch('/api/posts', {
+      const response = await fetch(`/api/posts?id=${id}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
       });
 
       if (!response.ok) throw new Error('Failed to delete post');
@@ -72,7 +70,7 @@ export default function ReferenceTexts() {
       setReferenceTexts(prev => prev.filter(post => post.id !== id));
     } catch (error) {
       console.error('Error deleting post:', error);
-      alert('Failed to delete post');
+      alert('Failed to delete post. Please check console for details.');
     }
   };
 

@@ -60,20 +60,16 @@ export default function Miscellaneous() {
 
   const handleDeletePost = async (id: number) => {
     if (!confirm('Are you sure you want to delete this post?')) return;
-    
-    try {
-      const response = await fetch('/api/posts', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      });
 
+    try {
+      const response = await fetch(`/api/posts?id=${id}`, { method: 'DELETE' });
+  
       if (!response.ok) throw new Error('Failed to delete post');
       
       setMiscPosts(prev => prev.filter(post => post.id !== id));
     } catch (error) {
-      console.error('Error deleting post:', error);
-      alert('Failed to delete post');
+      console.error('Delete Error:', error);
+      alert('Failed to delete post. Please check console for details.');
     }
   };
 
