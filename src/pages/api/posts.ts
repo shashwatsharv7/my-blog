@@ -6,7 +6,7 @@ let pool: Pool;
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     if (!pool) {
-      pool = new Pool({ 
+      pool = new Pool({
         connectionString: process.env.POSTGRES_URL,
         connectionTimeoutMillis: 5000,
       });
@@ -43,9 +43,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [type]
       );
 
-      const formattedRows = rows.map(row => ({
+      // Convert createdAt to ISO string
+      const formattedRows = rows.map((row) => ({
         ...row,
-        createdat: row.createdat ? new Date(row.createdat).toISOString() : null,
+        createdAt: row.createdat ? new Date(row.createdat).toISOString() : null, // Rename and format
       }));
 
       return res.status(200).json(formattedRows);

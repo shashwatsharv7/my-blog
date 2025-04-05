@@ -53,24 +53,22 @@ export default function ReferenceTexts() {
       alert('Post added successfully!');
     } catch (error) {
       console.error('Error adding reference text:', error);
-      alert('Failed to add post. Please try again.');
     }
   };
 
   const handleDeletePost = async (id: number) => {
     if (!confirm('Are you sure you want to delete this post?')) return;
-    
+
     try {
       const response = await fetch(`/api/posts?id=${id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) throw new Error('Failed to delete post');
-      
+
       setReferenceTexts(prev => prev.filter(post => post.id !== id));
     } catch (error) {
       console.error('Error deleting post:', error);
-      alert('Failed to delete post');
     }
   };
 

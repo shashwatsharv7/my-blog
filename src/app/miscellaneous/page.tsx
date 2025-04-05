@@ -36,7 +36,7 @@ export default function Miscellaneous() {
   const handleAddMiscPost = async (formData: Record<string, string>) => {
     try {
       const tags = formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : [];
-      
+
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,30 +48,28 @@ export default function Miscellaneous() {
       });
 
       if (!response.ok) throw new Error('Failed to create post');
-      
+
       const createdPost = await response.json();
       setMiscPosts(prev => [createdPost, ...prev]);
       alert('Post added successfully!');
     } catch (error) {
       console.error('Error adding miscellaneous post:', error);
-      alert('Failed to add post. Please try again.');
     }
   };
 
   const handleDeletePost = async (id: number) => {
     if (!confirm('Are you sure you want to delete this post?')) return;
-    
+
     try {
       const response = await fetch(`/api/posts?id=${id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) throw new Error('Failed to delete post');
-      
+
       setMiscPosts(prev => prev.filter(post => post.id !== id));
     } catch (error) {
       console.error('Error deleting post:', error);
-      alert('Failed to delete post');
     }
   };
 
