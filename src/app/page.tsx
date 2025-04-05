@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Container from './components/Container';
+import Image from 'next/image';
 
 interface ContentItem {
   id: number;
@@ -22,7 +23,6 @@ export default function Home() {
   useEffect(() => {
     async function fetchLatestContent() {
       try {
-        // Fetch posts from API
         const responses = await Promise.all([
           fetch('/api/posts?type=reference'),
           fetch('/api/posts?type=author'),
@@ -35,7 +35,6 @@ export default function Home() {
           responses[2].json()
         ]);
 
-        // Combine and format all content
         const allContent = [
           ...referenceTexts.map((item: any) => ({
             ...item,
@@ -55,12 +54,10 @@ export default function Home() {
           }))
         ];
 
-        // Sort by creation date
         const sortedContent = allContent.sort(
           (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
 
-        // Get top 3 latest posts
         setLatestContent(sortedContent.slice(0, 3));
       } catch (error) {
         console.error('Error fetching content:', error);
@@ -77,14 +74,46 @@ export default function Home() {
         className="relative h-screen bg-cover bg-center"
         style={{ backgroundImage: "url('/images/mithila-bg.jpg')" }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-transparent"></div>
-        
-        <div className="relative h-full flex flex-col items-center justify-center text-center text-white">
-          <h1 className="text-5xl font-bold mb-4">Mithila By Rajnath</h1>
-          <p className="text-lg md:text-xl mb-8">
-            Explore literary insights, book references, and more
-          </p>
+        {/* Stronger Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black/40"></div>
+
+        {/* Centered Text Section */}
+        <div className="relative h-full flex flex-col items-center justify-center text-center text-white px-4">
+          <div className="bg-black/50 px-10 py-8 rounded-lg backdrop-blur-md shadow-lg">
+            <h1
+              className="text-7xl font-extrabold mb-6 text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.9)]"
+            >
+              Mithila By Rajnath
+            </h1>
+            <p
+              className="text-2xl md:text-3xl font-medium drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]"
+            >
+              Explore literary insights, book references, and more
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Author Section */}
+      <div className="bg-gray-100 py-16">
+        <Container>
+          <div className="flex flex-col items-center justify-center">
+            <h2 className="text-6xl font-serif italic text-blue-600 mb-8">BY</h2>
+            <div className="relative w-64 h-64 rounded-full overflow-hidden border-4 border-blue-600 shadow-xl mb-8">
+              <Image 
+                src="/images/author.jpg" 
+                alt="Rajnath Mishra" 
+                fill 
+                style={{ objectFit: 'cover' }}
+                className="rounded-full"
+              />
+            </div>
+            <h3 className="text-3xl font-bold text-gray-800">Rajnath Mishra</h3>
+            <p className="text-xl text-gray-600 mt-4 max-w-2xl text-center">
+              A passionate writer and literary scholar dedicated to preserving and sharing the rich cultural heritage of Mithila.
+            </p>
+          </div>
+        </Container>
       </div>
 
       {/* Latest Content Section */}
