@@ -2,12 +2,22 @@ import { Pool } from '@neondatabase/serverless';
 import { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Create a database connection pool
-  const pool = new Pool({
-    connectionString: process.env.POSTGRES_URL,
-  });
+  const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
 
   try {
+    // First ensure the table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS posts (
+        id SERIAL PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        category VARCHAR(100),
+        author VARCHAR(100),
+        createdat TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
       res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,6 +31,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'GET') {
       const { type } = req.query;
+      if (!type) return res.status(400).json({ error: 'Missing type parameter' });
+      
       const { rows } = await pool.query(
         'SELECT * FROM posts WHERE type = $1 ORDER BY createdat DESC',
         [type]
@@ -32,16 +44,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const { title, content, type, category, author } = req.body;
 
       // Validate required fields
-      if (!title || !content || !type) {
+      if (!title?.trim() || !content?.trim() || !type?.trim()) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      // Insert new post into database
+      // Insert new post
       const { rows } = await pool.query(
         `INSERT INTO posts (title, content, type, category, author)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING *`,
-        [title, content, type, category || null, author || null]
+        [title.trim(), content.trim(), type.trim(), category?.trim() || null, author?.trim() || null]
       );
 
       return res.status(201).json(rows[0]);
@@ -50,11 +62,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Allow', ['GET', 'POST', 'OPTIONS']);
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Database error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message,
+      code: error.code
+    });
   } finally {
-    // Close the database connection
     await pool.end();
   }
 }
