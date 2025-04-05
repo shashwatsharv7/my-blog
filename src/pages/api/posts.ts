@@ -46,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Format the createdAt field before returning
       const formattedRows = rows.map(row => ({
         ...row,
-        createdat: new Date(row.createdat).toISOString()
+        createdat: row.createdat ? new Date(row.createdat).toISOString() : null // Convert to ISO string
       }));
 
       return res.status(200).json(formattedRows);
