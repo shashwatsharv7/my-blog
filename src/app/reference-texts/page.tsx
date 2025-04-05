@@ -1,8 +1,8 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import Container from '../components/Container';
 import AddForm from '../components/AddForm';
+import PostCard from '../components/PostCard';
 import { checkAdmin } from '@/utils/adminAuth';
 
 interface ReferenceText {
@@ -57,6 +57,25 @@ export default function ReferenceTexts() {
     }
   };
 
+  const handleDeletePost = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
+    try {
+      const response = await fetch('/api/posts', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) throw new Error('Failed to delete post');
+      
+      setReferenceTexts(prev => prev.filter(post => post.id !== id));
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post');
+    }
+  };
+
   return (
     <>
       <div className="bg-blue-600 py-10 text-center text-white">
@@ -82,16 +101,17 @@ export default function ReferenceTexts() {
 
           <div className="space-y-6">
             {referenceTexts.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow-md p-6">
-                <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full mb-3">
-                  {item.category || 'Uncategorized'}
-                </span>
-                <h3 className="text-xl font-bold mb-1">{item.title}</h3>
-                <p className="text-gray-600 mb-4">by {item.author}</p>
-                <blockquote className="border-l-4 border-blue-500 pl-4 italic text-gray-700">
-                  &ldquo;{item.content}&rdquo;
-                </blockquote>
-              </div>
+              <PostCard
+                key={item.id}
+                id={item.id}
+                title={item.title}
+                content={item.content}
+                createdAt={item.createdAt}
+                category={item.category}
+                author={item.author}
+                isAdmin={isAdmin}
+                onDelete={handleDeletePost}
+              />
             ))}
           </div>
         </div>

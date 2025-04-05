@@ -1,8 +1,8 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import Container from '../components/Container';
 import AddForm from '../components/AddForm';
+import PostCard from '../components/PostCard';
 import { checkAdmin } from '@/utils/adminAuth';
 
 interface AuthorPost {
@@ -54,6 +54,25 @@ export default function ByAuthor() {
     }
   };
 
+  const handleDeletePost = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
+    try {
+      const response = await fetch('/api/posts', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) throw new Error('Failed to delete post');
+      
+      setAuthorPosts(prev => prev.filter(post => post.id !== id));
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post');
+    }
+  };
+
   return (
     <>
       <div className="bg-blue-600 py-10 text-center text-white">
@@ -77,15 +96,15 @@ export default function ByAuthor() {
 
           <div className="space-y-6">
             {authorPosts.map((post) => (
-              <div key={post.id} className="bg-white rounded-lg shadow-md p-6">
-                <h3 className="text-xl font-bold mb-2">{post.title}</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  {new Date(post.createdAt).toLocaleDateString()}
-                </p>
-                <div className="text-gray-700">
-                  <p>{post.content}</p>
-                </div>
-              </div>
+              <PostCard
+                key={post.id}
+                id={post.id}
+                title={post.title}
+                content={post.content}
+                createdAt={post.createdAt}
+                isAdmin={isAdmin}
+                onDelete={handleDeletePost}
+              />
             ))}
           </div>
         </div>
