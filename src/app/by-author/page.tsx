@@ -16,82 +16,72 @@ export default function ByAuthor() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [authorPosts, setAuthorPosts] = useState<AuthorPost[]>([]);
 
-  // Fetch author posts on component mount
   useEffect(() => {
     setIsAdmin(checkAdmin());
-
-    async function fetchAuthorPosts() {
-      try {
-        const response = await fetch('/api/posts?type=author');
-        if (!response.ok) throw new Error('Failed to fetch posts');
-        const data: AuthorPost[] = await response.json();
-
-        // Sort posts by newest first
-        const sorted = data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setAuthorPosts(sorted);
-      } catch (error) {
-        console.error('Error fetching author posts:', error);
-      }
-    }
-
     fetchAuthorPosts();
   }, []);
 
-  // Handle form submission for adding a new post
+  const fetchAuthorPosts = async () => {
+    try {
+      const response = await fetch('/api/posts?type=author');
+      if (!response.ok) throw new Error('Failed to fetch posts');
+      const data = await response.json();
+      setAuthorPosts(data);
+    } catch (error) {
+      console.error('Error fetching author posts:', error);
+    }
+  };
+
   const handleAddAuthorPost = async (formData: Record<string, string>) => {
-    const newPost = {
-      title: formData.title,
-      content: formData.content,
-      type: 'author',
-    };
-  
     try {
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newPost),
+        body: JSON.stringify({
+          ...formData,
+          type: 'author'
+        }),
       });
-  
+
       if (!response.ok) throw new Error('Failed to create post');
-  
-      const createdPost: AuthorPost = await response.json();
-      setAuthorPosts((prev) => [createdPost, ...prev]); // Add the new post to the state
+      
+      const createdPost = await response.json();
+      setAuthorPosts(prev => [createdPost, ...prev]);
       alert('Post added successfully!');
     } catch (error) {
       console.error('Error adding author post:', error);
       alert('Failed to add post. Please try again.');
     }
-  };  
+  };
 
   return (
     <>
-      {/* Hero Section */}
       <div className="bg-blue-600 py-10 text-center text-white">
         <h1 className="text-3xl font-bold">By Author</h1>
       </div>
 
       <Container>
         <div className="py-8">
-          {/* Show Add Form only for admins */}
           {isAdmin && (
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
               <h2 className="text-2xl font-bold mb-4">Add New Post</h2>
               <AddForm
                 fields={[
-                  { name: 'title', label: 'Title', placeholder: 'Enter post title', type: 'text', required:true },
-                  { name: 'content', label: 'Content', placeholder:'Write your content here', type:'textarea', required:true },
+                  { name: 'title', label: 'Title', placeholder: 'Enter post title', type: 'text', required: true },
+                  { name: 'content', label: 'Content', placeholder: 'Write your content here', type: 'textarea', required: true },
                 ]}
                 onSubmit={handleAddAuthorPost}
               />
             </div>
           )}
 
-          {/* Display Author Posts */}
           <div className="space-y-6">
             {authorPosts.map((post) => (
               <div key={post.id} className="bg-white rounded-lg shadow-md p-6">
                 <h3 className="text-xl font-bold mb-2">{post.title}</h3>
-                <p className="text-sm text-gray-500 mb-4">{new Date(post.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm text-gray-500 mb-4">
+                  {new Date(post.createdAt).toLocaleDateString()}
+                </p>
                 <div className="text-gray-700">
                   <p>{post.content}</p>
                 </div>
