@@ -4,30 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Container from './components/Container';
 
-interface ReferenceText {
-  id: number;
-  title: string;
-  author: string;
-  content: string;
-  category?: string;
-  createdAt: string;
-}
-
-interface AuthorPost {
-  id: number;
-  title: string;
-  content: string;
-  createdAt: string;
-}
-
-interface MiscPost {
-  id: number;
-  title: string;
-  content: string;
-  tags?: string[];
-  createdAt: string;
-}
-
 interface ContentItem {
   id: number;
   title: string;
@@ -44,38 +20,54 @@ export default function Home() {
   const [latestContent, setLatestContent] = useState<ContentItem[]>([]);
 
   useEffect(() => {
-    // Fetch content from localStorage with type safety
-    const referenceTexts: ReferenceText[] = JSON.parse(localStorage.getItem('referenceTexts') || '[]');
-    const authorPosts: AuthorPost[] = JSON.parse(localStorage.getItem('authorPosts') || '[]');
-    const miscPosts: MiscPost[] = JSON.parse(localStorage.getItem('miscPosts') || '[]');
+    async function fetchLatestContent() {
+      try {
+        // Fetch posts from API
+        const responses = await Promise.all([
+          fetch('/api/posts?type=reference'),
+          fetch('/api/posts?type=author'),
+          fetch('/api/posts?type=misc')
+        ]);
 
-    // Combine all content into a single array with proper typing
-    const allContent: ContentItem[] = [
-      ...referenceTexts.map((item) => ({
-        ...item,
-        type: 'Reference Texts',
-        path: '/reference-texts',
-      })),
-      ...authorPosts.map((item) => ({
-        ...item,
-        type: 'By Author',
-        path: '/by-author',
-      })),
-      ...miscPosts.map((item) => ({
-        ...item,
-        type: 'Miscellaneous',
-        path: '/miscellaneous',
-        tags: item.tags || [],
-      })),
-    ];
+        const [referenceTexts, authorPosts, miscPosts] = await Promise.all([
+          responses[0].json(),
+          responses[1].json(),
+          responses[2].json()
+        ]);
 
-    // Sort by date (newest first)
-    allContent.sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+        // Combine and format all content
+        const allContent = [
+          ...referenceTexts.map((item: any) => ({
+            ...item,
+            type: 'Reference Texts',
+            path: '/reference-texts'
+          })),
+          ...authorPosts.map((item: any) => ({
+            ...item,
+            type: 'By Author',
+            path: '/by-author'
+          })),
+          ...miscPosts.map((item: any) => ({
+            ...item,
+            type: 'Miscellaneous',
+            path: '/miscellaneous',
+            tags: item.tags || []
+          }))
+        ];
 
-    // Take top 3 items for display
-    setLatestContent(allContent.slice(0, 3));
+        // Sort by creation date
+        const sortedContent = allContent.sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+
+        // Get top 3 latest posts
+        setLatestContent(sortedContent.slice(0, 3));
+      } catch (error) {
+        console.error('Error fetching content:', error);
+      }
+    }
+
+    fetchLatestContent();
   }, []);
 
   return (
@@ -96,7 +88,7 @@ export default function Home() {
       </div>
 
       {/* Latest Content Section */}
-      <Container id="latest-content">
+      <Container>
         <div className="py-12">
           <h2 className="text-center text-3xl font-bold mb-8">Latest Content</h2>
 
@@ -111,7 +103,9 @@ export default function Home() {
                   {item.author && (
                     <p className="text-gray-700 mb-1">by {item.author}</p>
                   )}
-                  <p className="text-sm text-gray-500 mb-3">{item.createdAt}</p>
+                  <p className="text-sm text-gray-500 mb-3">
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </p>
                   <p className="text-gray-600 mb-4 line-clamp-3">{item.content}</p>
                   <Link
                     href={item.path}
