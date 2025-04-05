@@ -1,9 +1,9 @@
 import { Pool } from '@neondatabase/serverless';
 import { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
+const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
 
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Set CORS headers for all responses
     res.setHeader('Access-Control-Allow-Origin', '*');
 
-    // Create table if not exists
+    // Ensure the table exists
     await pool.query(`
       CREATE TABLE IF NOT EXISTS posts (
         id SERIAL PRIMARY KEY,
@@ -29,10 +29,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       )
     `);
 
+    // GET handler
     if (req.method === 'GET') {
       const { type } = req.query;
       if (!type) return res.status(400).json({ error: 'Missing type parameter' });
-      
+
       const { rows } = await pool.query(
         'SELECT * FROM posts WHERE type = $1 ORDER BY createdat DESC',
         [type]
@@ -40,10 +41,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json(rows);
     }
 
+    // POST handler
     if (req.method === 'POST') {
-      // For POST, we'll check admin via header
       const adminToken = req.headers['x-admin-token'];
-      if (adminToken !== 'true') {
+      if (adminToken !== process.env.ADMIN_TOKEN) {
         return res.status(403).json({ error: 'Unauthorized' });
       }
 
@@ -65,24 +66,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(201).json(rows[0]);
     }
 
+    // DELETE handler
     if (req.method === 'DELETE') {
-      // Get ID from query params (not body)
+      const adminToken = req.headers['x-admin-token'];
+      if (adminToken !== process.env.ADMIN_TOKEN) {
+        return res.status(403).json({ error: 'Unauthorized' });
+      }
+
       const { id } = req.query;
       if (!id) return res.status(400).json({ error: 'Missing post ID' });
 
-      // Execute delete query
       await pool.query('DELETE FROM posts WHERE id = $1', [id]);
       return res.status(200).json({ success: true });
     }
 
     res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'OPTIONS']);
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
-    
-  } catch (error) {
+  } catch (error: any) {
     console.error('Database error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Internal server error',
-      message: error.message
+      message: error.message,
     });
   } finally {
     await pool.end();
