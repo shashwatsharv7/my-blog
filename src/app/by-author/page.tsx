@@ -67,7 +67,7 @@ export default function ByAuthor() {
       setAuthorPosts(prev => prev.filter(post => post.id !== id));
     } catch (error) {
       console.error('Error deleting post:', error);
-      alert('Failed to delete post. Please check console for details.');
+      alert('Failed to delete post');
     }
   };
 

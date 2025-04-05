@@ -70,7 +70,7 @@ export default function ReferenceTexts() {
       setReferenceTexts(prev => prev.filter(post => post.id !== id));
     } catch (error) {
       console.error('Error deleting post:', error);
-      alert('Failed to delete post. Please check console for details.');
+      alert('Failed to delete post');
     }
   };
 

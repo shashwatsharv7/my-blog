@@ -7,6 +7,9 @@ interface PostCardProps {
   createdAt: string;
   category?: string;
   author?: string;
+  tags?: string[];
+  isAdmin?: boolean; // Add this line
+  onDelete?: (id: number) => Promise<void>; // Add this line
 }
 
 export default function PostCard({
@@ -16,17 +19,20 @@ export default function PostCard({
   createdAt,
   category,
   author,
+  tags,
+  isAdmin,
+  onDelete
 }: PostCardProps) {
   // Helper function to format dates
-  const formatDate = (isoString: string): string => {
+  const formatDate = (dateString: string): string => {
     try {
-      const date = new Date(isoString);
+      const date = new Date(dateString);
       return date.toLocaleString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
+        minute: '2-digit'
       });
     } catch {
       return 'Invalid Date';
@@ -34,7 +40,16 @@ export default function PostCard({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="bg-white rounded-lg shadow-md p-6 relative">
+      {isAdmin && (
+        <button
+          onClick={() => onDelete && onDelete(id)}
+          className="absolute top-2 right-2 text-red-600 hover:text-red-800"
+        >
+          Delete
+        </button>
+      )}
+      
       {category && (
         <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full mb-3">
           {category}
@@ -45,9 +60,26 @@ export default function PostCard({
       
       {author && <p className="text-gray-600 mb-4">by {author}</p>}
       
-      <p className="text-sm text-gray-500 mb-4">{formatDate(createdAt)}</p>
+      <p className="text-sm text-gray-500 mb-4">
+        {formatDate(createdAt)}
+      </p>
       
-      <p className="text-gray-700">{content}</p>
+      <div className="text-gray-700">
+        <p>{content}</p>
+      </div>
+      
+      {tags && tags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-4">
+          {tags.map((tag, index) => (
+            <span
+              key={index}
+              className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
