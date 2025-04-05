@@ -1,12 +1,22 @@
 import { Pool } from '@neondatabase/serverless';
 import { NextApiRequest, NextApiResponse } from 'next';
-import { checkAdmin } from '@/utils/adminAuth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const pool = new Pool({ connectionString: process.env.POSTGRES_URL });
 
   try {
-    // First ensure the table exists
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Admin-Token');
+      return res.status(200).end();
+    }
+
+    // Set CORS headers for all responses
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    // Create table if not exists
     await pool.query(`
       CREATE TABLE IF NOT EXISTS posts (
         id SERIAL PRIMARY KEY,
@@ -18,28 +28,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         createdat TIMESTAMP DEFAULT NOW()
       )
     `);
-    
-    if (req.method === 'DELETE') {
-      if (!checkAdmin()) {
-        return res.status(403).json({ error: 'Unauthorized' });
-      }
-
-      const { id } = req.query; // Changed to get ID from query params
-      if (!id) return res.status(400).json({ error: 'Missing post ID' });
-
-      await pool.query('DELETE FROM posts WHERE id = $1', [id]);
-      return res.status(200).json({ success: true });
-    }  
-    // Handle CORS preflight
-    if (req.method === 'OPTIONS') {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-      return res.status(200).end();
-    }
-
-    // Set CORS headers for all responses
-    res.setHeader('Access-Control-Allow-Origin', '*');
 
     if (req.method === 'GET') {
       const { type } = req.query;
@@ -53,8 +41,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === 'POST') {
-      // Admin check for POST requests
-      if (!checkAdmin()) {
+      // For POST, we'll check admin via header
+      const adminToken = req.headers['x-admin-token'];
+      if (adminToken !== 'true') {
         return res.status(403).json({ error: 'Unauthorized' });
       }
 
@@ -77,14 +66,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (req.method === 'DELETE') {
-      // Admin check for DELETE requests
-      if (!checkAdmin()) {
-        return res.status(403).json({ error: 'Unauthorized' });
-      }
-
-      const { id } = req.body;
+      // Get ID from query params (not body)
+      const { id } = req.query;
       if (!id) return res.status(400).json({ error: 'Missing post ID' });
 
+      // Execute delete query
       await pool.query('DELETE FROM posts WHERE id = $1', [id]);
       return res.status(200).json({ success: true });
     }
@@ -92,12 +78,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader('Allow', ['GET', 'POST', 'DELETE', 'OPTIONS']);
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
     
-  } catch (error: any) {
+  } catch (error) {
     console.error('Database error:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
-      message: error.message,
-      code: error.code
+      message: error.message
     });
   } finally {
     await pool.end();
