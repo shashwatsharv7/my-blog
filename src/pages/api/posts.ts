@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (!pool) {
       pool = new Pool({ 
         connectionString: process.env.POSTGRES_URL,
-        connectionTimeoutMillis: 5000
+        connectionTimeoutMillis: 5000,
       });
     }
 
@@ -43,10 +43,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         [type]
       );
 
-      // Format the createdAt field before returning
       const formattedRows = rows.map(row => ({
         ...row,
-        createdat: row.createdat ? new Date(row.createdat).toISOString() : null // Convert to ISO string
+        createdat: row.createdat ? new Date(row.createdat).toISOString() : null,
       }));
 
       return res.status(200).json(formattedRows);
@@ -81,9 +80,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
   } catch (error) {
     console.error('Database error:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred'
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
     });
   }
 }
