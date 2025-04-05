@@ -101,7 +101,7 @@ export default function Home() {
             <h2 className="text-6xl font-serif italic text-blue-600 mb-8">BY</h2>
             <div className="relative w-64 h-64 rounded-full overflow-hidden border-4 border-blue-600 shadow-xl mb-8">
               <Image 
-                src="/images/author.jpg" 
+                src="/images/author-img.jpg" 
                 alt="Rajnath Mishra" 
                 fill 
                 style={{ objectFit: 'cover' }}
